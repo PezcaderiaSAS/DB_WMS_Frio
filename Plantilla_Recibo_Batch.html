@@ -1,0 +1,63 @@
+<div style="font-family: sans-serif; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 10px;">
+        <div>
+            <h2 style="margin:0;">RECIBO DE
+                <?= data.tipo ?>
+            </h2>
+            <small>Control de Inventario Frío</small>
+        </div>
+        <div style="text-align: right;">
+            <strong>N°
+                <?= data.id_movimiento ?>
+            </strong><br>
+            <?= data.fecha ?>
+        </div>
+    </div>
+
+    <div style="margin: 20px 0;">
+        <strong>Cliente:</strong>
+        <?= data.cliente ?><br>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+            <tr style="background: #f0f0f0;">
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Producto</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Empaque</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Cant.</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Peso (Kg)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <? var totalU = 0; var totalK = 0; ?>
+            <? for (var i = 0; i < data.items.length; i++) { ?>
+            <? var item = data.items[i]; totalU += item.unidades; totalK += item.kilos; ?>
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    <?= item.nombre ?>
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    <?= item.empaque ?>
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">
+                    <?= item.unidades ?>
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">
+                    <?= item.kilos ?>
+                </td>
+            </tr>
+            <? } ?>
+        </tbody>
+        <tfoot>
+            <tr style="font-weight: bold; background: #e8f4f8;">
+                <td colspan="2" style="border: 1px solid #ddd; padding: 8px; text-align: right;">TOTALES</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">
+                    <?= totalU ?>
+                </td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">
+                    <?= totalK.toFixed(2) ?>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>

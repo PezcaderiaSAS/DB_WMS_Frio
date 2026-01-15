@@ -1,0 +1,160 @@
+<script>
+    const { createApp } = Vue;
+
+    const MainComponent = {
+        template: '#main-template',
+        props: ['vistaActual'],
+        data() {
+            return {
+                procesando: false,
+                mensaje: { texto: '', tipo: '', pdf: null },
+                modales: { cliente: false, producto: false },
+
+                listaClientes: [],
+                listaProductos: [],
+                productosFiltrados: [],
+                stockInfo: null,
+
+                // Estado Movimiento
+                cabecera: { id_cliente: '', tipo: 'ENTRADA' },
+                itemTemp: { id_producto: '', unidades: '', kilos: '' },
+                carrito: [],
+
+                // Forms Modales
+                formCliente: { nombre: '', email: '', limite: 800, fijo: 430000, variable: 19 },
+                loteProductos: Array.from({ length: 10 }, () => ({ nombre: '', empaque: '' })), // 10 filas vacías
+                textoPegado: ''
+            }
+        },
+        computed: {
+            nombreClienteActual() {
+                const c = this.listaClientes.find(x => x.id_cliente === this.cabecera.id_cliente);
+                return c ? c.nombre_razon_social : '';
+            }
+        },
+        mounted() {
+            this.cargarDatos();
+        },
+        methods: {
+            cargarDatos() {
+                google.script.run.withSuccessHandler(res => {
+                    this.listaClientes = res.clientes;
+                    this.listaProductos = res.productos;
+                }).getDatosIniciales();
+            },
+            abrirModal(tipo) {
+                this.modales[tipo] = true;
+            },
+
+            // --- LÓGICA MOVIMIENTOS ---
+            cambiarCliente() {
+                this.productosFiltrados = this.listaProductos.filter(p => p.id_cliente === this.cabecera.id_cliente);
+                this.itemTemp = { id_producto: '', unidades: '', kilos: '' };
+                this.stockInfo = null;
+            },
+            verStock() {
+                const prod = this.listaProductos.find(p => p.id_producto === this.itemTemp.id_producto);
+                this.stockInfo = prod ? { stock_unidades: prod.stock_unidades, stock_kilos: prod.stock_kilos } : null;
+            },
+            obtenerNombreProd(id) {
+                const p = this.listaProductos.find(x => x.id_producto === id);
+                return p ? p.nombre_producto : id;
+            },
+            agregarAlCarrito() {
+                if (!this.itemTemp.id_producto || !this.itemTemp.unidades || !this.itemTemp.kilos) return;
+
+                // Validación visual de stock para salida
+                if (this.cabecera.tipo === 'SALIDA' && this.stockInfo) {
+                    if (this.itemTemp.unidades > this.stockInfo.stock_unidades) {
+                        alert("Stock insuficiente para agregar a la lista.");
+                        return;
+                    }
+                }
+
+                this.carrito.push({ ...this.itemTemp });
+                this.itemTemp = { id_producto: '', unidades: '', kilos: '' }; // Reset inputs
+            },
+            procesarPedido() {
+                this.procesando = true;
+                const payload = {
+                    cabecera: { ...this.cabecera, nombre_cliente: this.nombreClienteActual },
+                    items: JSON.parse(JSON.stringify(this.carrito))
+                };
+
+                google.script.run
+                    .withSuccessHandler(res => {
+                        this.procesando = false;
+                        if (res.success) {
+                            this.mensaje = { texto: 'Movimiento Masivo Exitoso ID: ' + res.id, tipo: 'success', pdf: res.url };
+                            this.carrito = [];
+                            this.cargarDatos(); // Actualizar stocks
+                        } else {
+                            this.mensaje = { texto: 'Error: ' + res.error, tipo: 'error' };
+                        }
+                    })
+                    .withFailureHandler(err => {
+                        this.procesando = false;
+                        this.mensaje = { texto: 'Fallo crítico: ' + err.message, tipo: 'error' };
+                    })
+                    .procesarMovimientoBatch(payload);
+            },
+
+            // --- LÓGICA MODALES ---
+            guardarClienteRapido() {
+                google.script.run.withSuccessHandler(res => {
+                    if (res.success) {
+                        this.listaClientes.push(res.nuevoCliente); // Agregar a local sin recargar todo
+                        this.cabecera.id_cliente = res.id; // Auto-seleccionar
+                        this.cambiarCliente();
+                        this.modales.cliente = false;
+                    }
+                }).registrarCliente(JSON.parse(JSON.stringify(this.formCliente)));
+            },
+
+            // Lógica Grid Excel
+            agregarFilasLote() {
+                for (let i = 0; i < 5; i++) this.loteProductos.push({ nombre: '', empaque: '' });
+            },
+            parsearTextoPegado() {
+                // Separa por filas y tabulaciones (formato Excel clipboard)
+                const filas = this.textoPegado.split(/\r\n|\n|\r/);
+                this.loteProductos = []; // Limpiar grid
+                filas.forEach(f => {
+                    if (f.trim() === '') return;
+                    const cols = f.split('\t');
+                    this.loteProductos.push({
+                        nombre: cols[0] || '',
+                        empaque: cols[1] || ''
+                    });
+                });
+            },
+            guardarLoteProductos() {
+                const validos = this.loteProductos.filter(p => p.nombre && p.empaque).map(p => ({
+                    ...p, id_cliente: this.cabecera.id_cliente
+                }));
+
+                if (validos.length === 0) return;
+
+                google.script.run.withSuccessHandler(res => {
+                    if (res.success) {
+                        this.cargarDatos(); // Recargar todo para tener los IDs nuevos
+                        setTimeout(() => {
+                            this.cambiarCliente(); // Actualizar filtro
+                            this.modales.producto = false;
+                            this.textoPegado = '';
+                            this.loteProductos = Array.from({ length: 10 }, () => ({ nombre: '', empaque: '' }));
+                        }, 1000);
+                    } else {
+                        alert("Error: " + res.error);
+                    }
+                }).registrarLoteProductos(validos);
+            }
+        }
+    };
+
+    const app = createApp({
+        data() { return { vista: 'movimientos' } }
+    });
+    app.component('component-principal', MainComponent);
+    app.mount('#app');
+</script>

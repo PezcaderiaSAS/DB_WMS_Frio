@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WMS Control de Frío</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <?!= include('Estilos'); ?>
+</head>
+
+<body class="bg-gray-100 text-slate-800 h-screen overflow-hidden">
+
+    <div id="app" class="flex h-full">
+        <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
+            <div class="p-6 border-b border-slate-700">
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                    <span class="material-icons text-blue-400">ac_unit</span>
+                    WMS Frío
+                </h1>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-2">
+                <button @click="vista = 'movimientos'"
+                    :class="`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition ${vista==='movimientos' ? 'bg-blue-600' : 'hover:bg-slate-800'}`">
+                    <span class="material-icons">sync_alt</span> Registrar Movimiento
+                </button>
+
+                <button @click="vista = 'inventario'"
+                    :class="`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition ${vista==='inventario' ? 'bg-blue-600' : 'hover:bg-slate-800'}`">
+                    <span class="material-icons">inventory_2</span> Ver Inventario
+                </button>
+
+                <div class="pt-4 pb-2 text-xs text-slate-500 font-bold uppercase">Administración</div>
+
+                <button @click="vista = 'nuevo_cliente'"
+                    :class="`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition ${vista==='nuevo_cliente' ? 'bg-blue-600' : 'hover:bg-slate-800'}`">
+                    <span class="material-icons">person_add</span> Crear Cliente
+                </button>
+
+                <button @click="vista = 'nuevo_producto'"
+                    :class="`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition ${vista==='nuevo_producto' ? 'bg-blue-600' : 'hover:bg-slate-800'}`">
+                    <span class="material-icons">add_box</span> Crear Producto
+                </button>
+            </nav>
+        </aside>
+
+        <main class="flex-1 overflow-auto p-8 relative">
+            <component-principal :vista-actual="vista"></component-principal>
+        </main>
+    </div>
+
+    <?!= include('Formulario'); ?>
+    <?!= include('JavaScript'); ?>
+</body>
+
+</html>
