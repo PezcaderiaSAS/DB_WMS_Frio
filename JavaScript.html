@@ -14,6 +14,7 @@
                 listaProductos: [],
                 productosFiltrados: [],
                 stockInfo: null,
+                filtroInventario: '',
 
                 // Estado Movimiento
                 cabecera: { id_cliente: '', tipo: 'ENTRADA' },
@@ -22,14 +23,47 @@
 
                 // Forms Modales
                 formCliente: { nombre: '', email: '', limite: 800, fijo: 430000, variable: 19 },
-                loteProductos: Array.from({ length: 10 }, () => ({ nombre: '', empaque: '' })), // 10 filas vacías
-                textoPegado: ''
+                loteProductos: Array.from({ length: 10 }, () => ({ nombre: '', empaque: '' })),
+                textoPegado: '',
+
+                // Forms Completos
+                formClienteCompleto: {
+                    id_cliente: '',
+                    tipo_documento: 'CC',
+                    nombre_razon_social: '',
+                    email: '',
+                    telefono: '',
+                    ciudad: '',
+                    departamento: 'Santander',
+                    direccion: '',
+                    estado: 'Activo'
+                },
+                formProductoCompleto: {
+                    sku: '',
+                    nombre: '',
+                    descripcion: '',
+                    categoria: '',
+                    unidad: 'Unid',
+                    precio: 0,
+                    impuesto: 19,
+                    estado: 'Activo'
+                },
+                guardandoCliente: false,
+                guardandoProducto: false
             }
         },
         computed: {
             nombreClienteActual() {
                 const c = this.listaClientes.find(x => x.id_cliente === this.cabecera.id_cliente);
                 return c ? c.nombre_razon_social : '';
+            },
+            productosFiltradosInventario() {
+                const termino = this.filtroInventario.toLowerCase();
+                if (!termino) return this.listaProductos;
+                return this.listaProductos.filter(p => 
+                    (p.SKU || '').toLowerCase().includes(termino) ||
+                    (p.Nombre || '').toLowerCase().includes(termino)
+                );
             }
         },
         mounted() {
@@ -38,8 +72,8 @@
         methods: {
             cargarDatos() {
                 google.script.run.withSuccessHandler(res => {
-                    this.listaClientes = res.clientes;
-                    this.listaProductos = res.productos;
+                    this.listaClientes = res.clientes || [];
+                    this.listaProductos = res.productos || [];
                 }).getDatosIniciales();
             },
             abrirModal(tipo) {
@@ -63,7 +97,6 @@
             agregarAlCarrito() {
                 if (!this.itemTemp.id_producto || !this.itemTemp.unidades || !this.itemTemp.kilos) return;
 
-                // Validación visual de stock para salida
                 if (this.cabecera.tipo === 'SALIDA' && this.stockInfo) {
                     if (this.itemTemp.unidades > this.stockInfo.stock_unidades) {
                         alert("Stock insuficiente para agregar a la lista.");
@@ -72,7 +105,7 @@
                 }
 
                 this.carrito.push({ ...this.itemTemp });
-                this.itemTemp = { id_producto: '', unidades: '', kilos: '' }; // Reset inputs
+                this.itemTemp = { id_producto: '', unidades: '', kilos: '' };
             },
             procesarPedido() {
                 this.procesando = true;
@@ -87,7 +120,7 @@
                         if (res.success) {
                             this.mensaje = { texto: 'Movimiento Masivo Exitoso ID: ' + res.id, tipo: 'success', pdf: res.url };
                             this.carrito = [];
-                            this.cargarDatos(); // Actualizar stocks
+                            this.cargarDatos();
                         } else {
                             this.mensaje = { texto: 'Error: ' + res.error, tipo: 'error' };
                         }
@@ -103,12 +136,85 @@
             guardarClienteRapido() {
                 google.script.run.withSuccessHandler(res => {
                     if (res.success) {
-                        this.listaClientes.push(res.nuevoCliente); // Agregar a local sin recargar todo
-                        this.cabecera.id_cliente = res.id; // Auto-seleccionar
+                        this.listaClientes.push(res.nuevoCliente);
+                        this.cabecera.id_cliente = res.id;
                         this.cambiarCliente();
                         this.modales.cliente = false;
                     }
-                }).registrarCliente(JSON.parse(JSON.stringify(this.formCliente)));
+                }).guardarCliente(JSON.parse(JSON.stringify(this.formCliente)));
+            },
+
+            // --- GUARDAR CLIENTE COMPLETO ---
+            guardarClienteCompleto() {
+                this.guardandoCliente = true;
+                const datos = {
+                    ...this.formClienteCompleto,
+                    esEdicion: false
+                };
+
+                google.script.run
+                    .withSuccessHandler(res => {
+                        this.guardandoCliente = false;
+                        if (res.success) {
+                            this.mensaje = { texto: '✅ Cliente creado correctamente', tipo: 'success' };
+                            this.cargarDatos();
+                            this.formClienteCompleto = {
+                                id_cliente: '',
+                                tipo_documento: 'CC',
+                                nombre_razon_social: '',
+                                email: '',
+                                telefono: '',
+                                ciudad: '',
+                                departamento: 'Santander',
+                                direccion: '',
+                                estado: 'Activo'
+                            };
+                            setTimeout(() => { this.mensaje = { texto: '', tipo: '' }; }, 3000);
+                        } else {
+                            this.mensaje = { texto: '❌ Error: ' + res.message, tipo: 'error' };
+                        }
+                    })
+                    .withFailureHandler(err => {
+                        this.guardandoCliente = false;
+                        this.mensaje = { texto: '❌ Error: ' + err.message, tipo: 'error' };
+                    })
+                    .guardarCliente(datos);
+            },
+
+            // --- GUARDAR PRODUCTO COMPLETO ---
+            guardarProductoCompleto() {
+                this.guardandoProducto = true;
+                const datos = {
+                    ...this.formProductoCompleto,
+                    esEdicion: false
+                };
+
+                google.script.run
+                    .withSuccessHandler(res => {
+                        this.guardandoProducto = false;
+                        if (res.success) {
+                            this.mensaje = { texto: '✅ Producto creado correctamente', tipo: 'success' };
+                            this.cargarDatos();
+                            this.formProductoCompleto = {
+                                sku: '',
+                                nombre: '',
+                                descripcion: '',
+                                categoria: '',
+                                unidad: 'Unid',
+                                precio: 0,
+                                impuesto: 19,
+                                estado: 'Activo'
+                            };
+                            setTimeout(() => { this.mensaje = { texto: '', tipo: '' }; }, 3000);
+                        } else {
+                            this.mensaje = { texto: '❌ Error: ' + res.message, tipo: 'error' };
+                        }
+                    })
+                    .withFailureHandler(err => {
+                        this.guardandoProducto = false;
+                        this.mensaje = { texto: '❌ Error: ' + err.message, tipo: 'error' };
+                    })
+                    .guardarProducto(datos);
             },
 
             // Lógica Grid Excel
@@ -116,9 +222,8 @@
                 for (let i = 0; i < 5; i++) this.loteProductos.push({ nombre: '', empaque: '' });
             },
             parsearTextoPegado() {
-                // Separa por filas y tabulaciones (formato Excel clipboard)
                 const filas = this.textoPegado.split(/\r\n|\n|\r/);
-                this.loteProductos = []; // Limpiar grid
+                this.loteProductos = [];
                 filas.forEach(f => {
                     if (f.trim() === '') return;
                     const cols = f.split('\t');
@@ -137,9 +242,9 @@
 
                 google.script.run.withSuccessHandler(res => {
                     if (res.success) {
-                        this.cargarDatos(); // Recargar todo para tener los IDs nuevos
+                        this.cargarDatos();
                         setTimeout(() => {
-                            this.cambiarCliente(); // Actualizar filtro
+                            this.cambiarCliente();
                             this.modales.producto = false;
                             this.textoPegado = '';
                             this.loteProductos = Array.from({ length: 10 }, () => ({ nombre: '', empaque: '' }));
@@ -148,6 +253,63 @@
                         alert("Error: " + res.error);
                     }
                 }).registrarLoteProductos(validos);
+            }
+        }
+    };
+
+    const app = createApp({
+        template: `
+            <div class="flex h-full">
+                <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
+                    <div class="p-6 border-b border-slate-700">
+                        <h1 class="text-xl font-bold flex items-center gap-2">
+                            <span class="material-icons text-blue-400">ac_unit</span>
+                            WMS Frío
+                        </h1>
+                    </div>
+
+                    <nav class="flex-1 p-4 space-y-2">
+                        <button @click="vista = 'movimientos'"
+                            :class="\`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition \${vista==='movimientos' ? 'bg-blue-600' : 'hover:bg-slate-800'}\`">
+                            <span class="material-icons">sync_alt</span> Registrar Movimiento
+                        </button>
+
+                        <button @click="vista = 'inventario'"
+                            :class="\`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition \${vista==='inventario' ? 'bg-blue-600' : 'hover:bg-slate-800'}\`">
+                            <span class="material-icons">inventory_2</span> Ver Inventario
+                        </button>
+
+                        <div class="pt-4 pb-2 text-xs text-slate-500 font-bold uppercase">Administración</div>
+
+                        <button @click="vista = 'nuevo_cliente'"
+                            :class="\`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition \${vista==='nuevo_cliente' ? 'bg-blue-600' : 'hover:bg-slate-800'}\`">
+                            <span class="material-icons">person_add</span> Crear Cliente
+                        </button>
+
+                        <button @click="vista = 'nuevo_producto'"
+                            :class="\`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition \${vista==='nuevo_producto' ? 'bg-blue-600' : 'hover:bg-slate-800'}\`">
+                            <span class="material-icons">add_box</span> Crear Producto
+                        </button>
+                    </nav>
+                </aside>
+
+                <main class="flex-1 overflow-auto p-8 relative">
+                    <component-principal :vista-actual="vista"></component-principal>
+                </main>
+            </div>
+        `,
+        data() {
+            return {
+                vista: 'movimientos'
+            }
+        },
+        components: {
+            'component-principal': MainComponent
+        }
+    });
+
+    app.mount('#app');
+</script>
             }
         }
     };

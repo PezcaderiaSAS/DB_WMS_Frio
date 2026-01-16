@@ -20,6 +20,9 @@ const CONFIG = {
   TIMEZONE: 'America/Bogota',
   LOCK_TIMEOUT: 30000,
   
+  SPREADSHEET_ID: '1_xlPpu_KgdY-ClHx9BDxA5dfUPP_I6ARRHBCbz_2caE', 
+  FOLDER_RECIBOS_ID: '1AQZ_el8mIf5Bdz04T7zam_SlwtmVGDEw',
+
   // Getters dinámicos para IDs (desde Script Properties)
   get SPREADSHEET_ID() {
     return PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') || '';
