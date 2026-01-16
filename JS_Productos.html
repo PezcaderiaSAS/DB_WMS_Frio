@@ -1,0 +1,76 @@
+<script>
+    // --- LÓGICA DE PRODUCTOS ACTUALIZADA ---
+
+    function abrirModalProducto(modo, datos = null) {
+        const form = document.getElementById('formProducto');
+        form.reset();
+
+        // Elementos del DOM
+        const inputSku = document.getElementById('prod_sku');
+        const titulo = document.getElementById('tituloModalProd');
+        const inputEsEdicion = document.getElementById('prod_es_edicion');
+
+        if (modo === 'editar' && datos) {
+            // Descomprimir datos (asumiendo que pasaste el objeto JSON stringified)
+            const obj = typeof datos === 'string' ? JSON.parse(decodeURIComponent(datos)) : datos;
+
+            titulo.innerText = "Editar Producto";
+            inputEsEdicion.value = "true";
+
+            inputSku.value = obj.sku;
+            inputSku.disabled = true; // El SKU no se debe cambiar al editar
+
+            document.getElementById('prod_nombre').value = obj.nombre;
+            document.getElementById('prod_categoria').value = obj.categoria;
+            document.getElementById('prod_unidad').value = obj.unidad;
+            document.getElementById('prod_impuesto').value = obj.impuesto || 0;
+
+        } else {
+            titulo.innerText = "Nuevo Producto";
+            inputEsEdicion.value = "false";
+            inputSku.value = "";
+            inputSku.disabled = false;
+        }
+
+        new bootstrap.Modal(document.getElementById('modalProducto')).show();
+    }
+
+    function handleGuardarProducto(e) {
+        e.preventDefault();
+
+        // Recolección de datos
+        const datos = {
+            esEdicion: document.getElementById('prod_es_edicion').value === "true",
+            sku: document.getElementById('prod_sku').value,
+            nombre: document.getElementById('prod_nombre').value,
+            categoria: document.getElementById('prod_categoria').value,
+            unidad: document.getElementById('prod_unidad').value,
+            impuesto: document.getElementById('prod_impuesto').value,
+            estado: "Activo"
+        };
+
+        // Validación Frontend simple
+        if (!datos.sku || !datos.nombre) {
+            Swal.fire('Error', 'SKU y Nombre son obligatorios', 'warning');
+            return;
+        }
+
+        // Feedback visual
+        Swal.fire({
+            title: 'Guardando...',
+            didOpen: () => Swal.showLoading()
+        });
+
+        // Llamada al Backend
+        google.script.run
+            .withSuccessHandler((res) => {
+                Swal.fire('Éxito', res.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('modalProducto')).hide();
+                cargarTablaProductos(); // Función existente para recargar la tabla
+            })
+            .withFailureHandler((err) => {
+                Swal.fire('Error', err.message, 'error');
+            })
+            .guardarProducto(datos);
+    }
+</script>

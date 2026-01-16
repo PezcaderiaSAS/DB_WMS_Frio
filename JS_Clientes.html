@@ -1,0 +1,63 @@
+<script>
+    function cargarVistaClientes() {
+        const tbody = document.getElementById('tablaClientesBody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Cargando...</td></tr>';
+
+        google.script.run
+            .withSuccessHandler((lista) => {
+                tbody.innerHTML = '';
+                if (lista.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay clientes registrados.</td></tr>';
+                    return;
+                }
+
+                lista.forEach(c => {
+                    // c es {id, nombre}, si necesitas más datos debes ajustar 'obtenerListaClientes' en backend
+                    tbody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${c.id}</td>
+                    <td>${c.nombre}</td>
+                    <td>-</td> <td>-</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="alert('Editar pendiente de implementar para ID: ${c.id}')">
+                        <i class="bi bi-pencil"></i>
+                        </button>
+                    </td>
+                </tr>
+            `);
+                });
+            })
+            .withFailureHandler(mostrarError)
+            .obtenerListaClientes(); // Asegúrate que esta función devuelva lo necesario
+    }
+
+    function abrirModalCliente() {
+        document.getElementById('formCliente').reset();
+        document.getElementById('cli_id').disabled = false;
+        new bootstrap.Modal(document.getElementById('modalCliente')).show();
+    }
+
+    function handleGuardarCliente(e) {
+        e.preventDefault();
+
+        const datos = {
+            id: document.getElementById('cli_id').value,
+            nombre: document.getElementById('cli_nombre').value,
+            telefono: document.getElementById('cli_telefono').value,
+            ciudad: document.getElementById('cli_ciudad').value,
+            direccion: document.getElementById('cli_direccion').value,
+            email: document.getElementById('cli_email').value
+        };
+
+        Swal.fire({ title: 'Guardando...', didOpen: () => Swal.showLoading() });
+
+        google.script.run
+            .withSuccessHandler((res) => {
+                Swal.fire('Éxito', res.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('modalCliente')).hide();
+                cargarVistaClientes();
+            })
+            .withFailureHandler((err) => Swal.fire('Error', err.message, 'error'))
+            .guardarCliente(datos);
+    }
+</script>

@@ -1,0 +1,75 @@
+<div id="vista-clientes" class="seccion-app" style="display:none;">
+    <div class="row mb-3">
+        <div class="col">
+            <h2 class="text-primary"><i class="bi bi-people"></i> Directorio de Clientes</h2>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" onclick="abrirModalCliente()">
+                <i class="bi bi-person-plus"></i> Nuevo Cliente
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID / NIT</th>
+                        <th>Nombre / Razón Social</th>
+                        <th>Teléfono</th>
+                        <th>Ciudad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaClientesBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCliente" tabindex="-1">
+        <div class="modal-dialog">
+            <form id="formCliente" onsubmit="handleGuardarCliente(event)">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="tituloModalCliente">Cliente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label>Identificación (CC/NIT)</label>
+                            <input type="text" class="form-control" id="cli_id" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Nombre Completo</label>
+                            <input type="text" class="form-control" id="cli_nombre" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label>Teléfono</label>
+                                <input type="text" class="form-control" id="cli_telefono">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label>Ciudad</label>
+                                <input type="text" class="form-control" id="cli_ciudad">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label>Dirección</label>
+                            <input type="text" class="form-control" id="cli_direccion">
+                        </div>
+                        <div class="mb-3">
+                            <label>Email</label>
+                            <input type="email" class="form-control" id="cli_email">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

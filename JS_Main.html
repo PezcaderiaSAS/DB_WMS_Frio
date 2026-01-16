@@ -1,0 +1,39 @@
+<script>
+    function cambiarVista(nombreVista, elementoLink, evento) {
+        if (evento) evento.preventDefault();
+
+        // 1. Ocultar todas las secciones con clase 'seccion-app'
+        const secciones = document.querySelectorAll('.seccion-app');
+        secciones.forEach(sec => sec.style.display = 'none');
+
+        // 2. Mostrar la sección seleccionada
+        // IMPORTANTE: Los IDs en tus archivos V_... deben ser 'vista-productos', 'vista-clientes', etc.
+        const idSeccion = 'vista-' + nombreVista;
+        const seccionMostrar = document.getElementById(idSeccion);
+
+        if (seccionMostrar) {
+            seccionMostrar.style.display = 'block';
+
+            // Lógica específica de inicialización por vista (Lazy Loading)
+            if (nombreVista === 'clientes' && typeof cargarVistaClientes === 'function') {
+                cargarVistaClientes();
+            }
+            if (nombreVista === 'productos' && typeof cargarTablaProductos === 'function') {
+                // cargarTablaProductos(); // Descomentar si quieres recargar siempre al entrar
+            }
+            if (nombreVista === 'compras' && typeof inicializarVistaCompras === 'function') {
+                inicializarVistaCompras();
+            }
+            // ... añadir otros si es necesario
+
+        } else {
+            console.error('No se encontró la sección con ID:', idSeccion);
+            Swal.fire('Error', 'La vista "' + nombreVista + '" no se encuentra implementada.', 'error');
+        }
+
+        // 3. Actualizar clase 'active' en el menú lateral
+        const links = document.querySelectorAll('#sidebar-wrapper .list-group-item');
+        links.forEach(link => link.classList.remove('active'));
+        if (elementoLink) elementoLink.classList.add('active');
+    }
+</script>
