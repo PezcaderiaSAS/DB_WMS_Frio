@@ -60,7 +60,7 @@
             productosFiltradosInventario() {
                 const termino = this.filtroInventario.toLowerCase();
                 if (!termino) return this.listaProductos;
-                return this.listaProductos.filter(p => 
+                return this.listaProductos.filter(p =>
                     (p.SKU || '').toLowerCase().includes(termino) ||
                     (p.Nombre || '').toLowerCase().includes(termino)
                 );
@@ -310,13 +310,6 @@
 
     app.mount('#app');
 </script>
-            }
-        }
-    };
-
-    const app = createApp({
-        data() { return { vista: 'movimientos' } }
-    });
-    app.component('component-principal', MainComponent);
-    app.mount('#app');
-</script>
+}
+}
+};

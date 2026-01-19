@@ -283,6 +283,14 @@ function validarCliente(data, esEdicion = false) {
       errores.push("Teléfono contiene caracteres inválidos");
     }
   }
+
+  // Validar Posiciones (Si se envían)
+  if (data.num_posiciones) {
+    const pos = parseInt(data.num_posiciones);
+    if (isNaN(pos) || pos < 1 || pos > 50) { // Límite técnico
+        errores.push("Número de posiciones inválido (1-50)");
+    }
+  }
   
   // Validar estado
   const estadosValidos = ["Activo", "Inactivo", "Suspendido"];
@@ -381,6 +389,9 @@ function guardarCliente(data) {
         "Pais",
         "Contacto",
         "Estado",
+        "NumPosiciones",
+        "LimiteKg",
+        "CostoExcesoDia",
         "FechaCreacion",
         "FechaActualizacion"
       ]);
@@ -399,6 +410,11 @@ function guardarCliente(data) {
     const pais = (data.pais || "Colombia").toString().trim().toUpperCase();
     const contacto = (data.contacto || "").toString().trim().toUpperCase();
     const estado = data.estado || "Activo";
+
+    // Campos de Facturación
+    const numPosiciones = parseInt(data.num_posiciones) || 1;
+    const limiteKg = numPosiciones * 800; // Regla de Negocio: 1 pos = 800kg
+    const costoExceso = parseFloat(data.costo_exceso_dia) || 19; // Default $19
     
     const valores = ws.getDataRange().getValues();
     let filaEncontrada = -1;
@@ -436,7 +452,13 @@ function guardarCliente(data) {
       ws.getRange(filaEncontrada, 10).setValue(pais);               // J: Pais
       ws.getRange(filaEncontrada, 11).setValue(contacto);           // K: Contacto
       ws.getRange(filaEncontrada, 12).setValue(estado);             // L: Estado
-      ws.getRange(filaEncontrada, 14).setValue(fechaActualizacion); // N: FechaActualizacion
+      
+      // Nuevas Columnas (M, N, O) - Verificar cabeceras si no existen
+      ws.getRange(filaEncontrada, 13).setValue(numPosiciones);      // M: NumPosiciones
+      ws.getRange(filaEncontrada, 14).setValue(limiteKg);           // N: LimiteKg
+      ws.getRange(filaEncontrada, 15).setValue(costoExceso);        // O: CostoExcesoDia
+
+      ws.getRange(filaEncontrada, 17).setValue(fechaActualizacion); // Q: FechaActualizacion (Col 14 original movida + 3 nuevas)
       
       SpreadsheetApp.flush();
       
@@ -472,6 +494,9 @@ function guardarCliente(data) {
         pais,
         contacto,
         estado,
+        numPosiciones,
+        limiteKg,
+        costoExceso,
         fechaCreacion,
         fechaCreacion // FechaActualizacion = FechaCreacion
       ]);
