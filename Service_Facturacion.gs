@@ -36,8 +36,8 @@ function ejecutarCierreDiario() {
     const kilosTotales = mapaKilosCliente[id] || 0;
     
     // Obtener reglas del cliente o usar defaults
-    const limitePosicion = cliente['limite_posicion_kg'] || 800;
-    const costoExcesoDia = cliente['costo_exceso_dia'] || 19; 
+    const limitePosicion = cliente['LimiteKg'] || 800;
+    const costoExcesoDia = cliente['CostoExcesoDia'] || 19; 
     
     let kilosExcedente = 0;
     let costoDiaVariable = 0;
